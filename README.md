@@ -12,11 +12,17 @@ Term: Fall 2016
 + This project is conducted by Vanessa Huang,yh2873
 
 + Project summary: In this project, I tried to find some fun facts of inaugurations speeches. For example: 
+
+
 + 1.the lengths of the sentences in inauguration speeches are getting shorter. Presidents tend to use simple words and simple sentences to make sure everyone can understaned their speeches. 
 ![image](figs/Average Sentence Length.jpeg)
 
-+ 2. Republicans is more "wordy" than the Democrats. 
+
+
++ 2.Republicans are more "wordy" than the Democrats. 
 ![image](figs/Speech Length by party.jpeg)
+
+
 
 + 3.President Woodrow Wilson is the "greatest" president since he used more than 1 "great" among 120 words.
 ![image](figs/Words Frequency (great) .jpeg)
