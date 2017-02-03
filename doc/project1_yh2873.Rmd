@@ -56,6 +56,7 @@ inaug=inaug[-nrow(inaug),] # remove the last line, irrelevant due to error.
 inaug.list=read.csv("../data/inauglist.csv", stringsAsFactors = FALSE)
 ```
 
+
 Integrate the information and the URLs into one list.
 
 ```{r}
@@ -73,6 +74,7 @@ for ( i in 1:nrow(speech.list))
 }
 
 ```
+
 
 Scrap the fulltext of every speech.
 
@@ -97,7 +99,7 @@ for(i in seq(nrow(speech.list))) {
 
 # Step 2: Data processing: generate list of sentences
 
-We assign an sequential id to each sentence in a speech (`sent.id`) and also calculated the number of words in each sentence as *sentence length* (`word.count`).
+I assign an sequential id to each sentence in a speech (`sent.id`) and also calculated the number of words in each sentence as *sentence length* (`word.count`).
 
 ```{r, message=FALSE, warning=FALSE}
 sentence.list=NULL
@@ -137,18 +139,18 @@ ggplot(data = speech.list)+
 
 We can tell there is a slight trend that the length of speech is getting shorter.
 
-Also, we found some "outliers" in the picture.
+Also, I found some "outliers" in the picture.
 
 ```{r}
 speech.list[which.max(speech.list$Words),c("President","year","Words")]
 speech.list[which.min(speech.list$Words),c("President","year","Words")]
 ```
 
-For example, the longest inaugural address was William H. Harrison's in 1841, which amounted to 8,460 words.
-The shortest one was George Washington's in 1793, which was only 135 words.
+For example, the longest inaugural address is William H. Harrison's in 1841, which amounts to 8,460 words.
+The shortest one is George Washington's in 1793, which is only 135 words.
 
 
-We tried to get rid of them, however, the overall pattern didn't change much. Namely, the length of an inaugurant speech keeps getting shorter gradually:
+I try to get rid of them, however, the overall pattern doesn't change much. Namely, the length of an inaugurant speech keeps getting shorter gradually:
 
 ```{r}
 speech.list.new=speech.list[-which.max(speech.list$Words),]
@@ -191,7 +193,7 @@ ggplot(data = speech.list)+
 
 ```
 
-This pattern proved my thought.
+This pattern proves my thought.
 I believe the reason is that centuries or decades ago, the presidents considered their audience as people who are well-educated. However, along with the increasing voter turnout, more and more people are listening to the president speeches, among whom are some who didn't receive good education. Therefore, presidents are tend to use simple words and simple sentences to make the speech easily understood Nowadays.
 
 
@@ -212,7 +214,7 @@ ggplot(data = Demo.Repub,mapping = aes(x=year,y=Words,color=Party))+
   geom_smooth(se=F,method="loess")+
   labs(list(title = "Speech Length (in words)", x = "Year", y = "words in speech"))+
   theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
-
+  
 
 
 ggplot(data = Demo.Repub,mapping = aes(x=year,y=sentence,color=Party))+
@@ -230,13 +232,13 @@ ggplot(data = Demo.Repub,mapping = aes(x=year,y=word.count,color=Party))+
 
 
 ```
-From figures above, we can tell that Republicans is more "wordy" than the Democrats. Their speeches tend to contain more sentences and thus amount to more words. However, presidents from two parties all followed the trend that each sentence has fewer words today than before.
+From figures above, we can tell that Republicans is more "wordy" than the Democrats. Their speeches tend to contain more sentences and thus amount to more words. However, presidents from two parties all follow the trend that each sentence has fewer words today than before.
 
 # Step 4: Data analysis: Word Frequency
 
 ##words frequency in all speeches
 There are some words that appear in every speech. So I was wondering which words have high frequency of occurances.
-I loaded in the speeches from local folder and counted the frequency of every word.
+I load in the speeches from local folder and counted the frequency of every word.
 
 ```{r,warnings=F}
 folder.path="../data/InauguralSpeeches/"
@@ -298,6 +300,7 @@ ggplot(data=sub)+
 
 There is a pattern that the word "people" are using more frequently while the word "govern" appears less. This may be a sign that today presidents care more about people rather than the power to govern, and the country is getting democratic.
 
+
 ##Who is the "greatest" president?
 
 ```{r}
@@ -309,6 +312,7 @@ ggplot(data=speech.list,aes(x=year,y=great))+
   geom_bar(stat="identity")+
   labs(list(title = "Words Frequncy (every 100 words)", x = "Year", y = "words"))+
   theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+  
 
 speech.list[which.max(speech.list$great),c("President","Date","great")]
 ```
