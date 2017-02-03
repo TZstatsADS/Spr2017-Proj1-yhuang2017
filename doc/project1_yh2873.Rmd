@@ -248,31 +248,31 @@ fulltext<-tm_map(fulltext, removeWords, stopwords("english"))
 fulltext<-tm_map(fulltext, removeWords, character(0))
 fulltext<-tm_map(fulltext, removePunctuation)
 fulltext<-tm_map(fulltext, stemDocument)
-text<-tm_map(fulltext, stripWhitespace)
 fulltext<-tm_map(fulltext, removePunctuation)
 fulltext<-tm_map(fulltext, removeNumbers)
 fulltext<-tm_map(fulltext, PlainTextDocument)
 
 dtm <- DocumentTermMatrix(fulltext) 
 dtms <- removeSparseTerms(dtm, 0.1)
+
 ```
 
 
-Then plot the frequency of words which showed more than 300 times in all the inauguration speech. There are 41 such words in total.
+Then plot the frequency of words which showed more than 200 times in all the inauguration speech. There are 29 such words in total.
 
 ```{r}
 freq <- sort(colSums(as.matrix(dtm)), decreasing=TRUE)  
 wf <- data.frame(word=names(freq), freq=freq) 
 
-ggplot(subset(wf, freq>300), aes(word, freq))+    
+ggplot(subset(wf, freq>200), aes(word, freq))+    
 geom_bar(stat="identity")+
 theme(axis.text.x=element_text(angle=45, hjust=1),plot.title = element_text(size = 20, face = "bold",hjust = 0.5))+
-labs(list(title = "Words Frequency (more than 300 times) ", x = "Year", y = "words amount"))
+labs(list(title = "Words Frequency (more than 200 times) ", x = "Year", y = "words amount"))
 
-nrow(subset(wf, freq>300))
+nrow(subset(wf, freq>200))
 wf[which.max(wf$freq),]
 ```
-The word "will" appeared most in the speeches, with 1864 times.
+The word "will" appeared most in the speeches, with 932 times.
 
 
 ##frequency of certain words in every speech
@@ -300,7 +300,6 @@ There is a pattern that the word "people" are using more frequently while the wo
 
 ##Who is the "greatest" president?
 
-President Woodrow Wilson's speech used more than 1 "great" among 120 words.
 ```{r}
 for (i in 1:nrow(speech.list))
      {
@@ -313,5 +312,5 @@ ggplot(data=speech.list,aes(x=year,y=great))+
 
 speech.list[which.max(speech.list$great),c("President","Date","great")]
 ```
-
+President Woodrow Wilson's speech used more than 1 "great" among 120 words.
 
