@@ -1,8 +1,8 @@
 ---
 title: 'Project 1: What did the presidents say at their inauguation?'
 output:
-  html_notebook: default
   html_document: default
+  html_notebook: default
 ---
 
 # Step 0: check and install needed packages. Load the libraries and functions. 
@@ -232,7 +232,7 @@ ggplot(data = Demo.Repub,mapping = aes(x=year,y=word.count,color=Party))+
 
 
 ```
-From figures above, we can tell that Republicans is more "wordy" than the Democrats. Their speeches tend to contain more sentences and thus amount to more words. However, presidents from two parties all follow the trend that each sentence has fewer words today than before.
+From figures above, we can tell that Republicans are more "wordy" than the Democrats. Their speeches tend to contain more sentences and thus amount to more words. However, presidents from two parties all follow the trend that each sentence has fewer words today than before.
 
 # Step 4: Data analysis: Word Frequency
 
