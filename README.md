@@ -17,8 +17,7 @@ Term: Fall 2016
 + 1. the lengths of the sentences in inauguration speeches are getting shorter. Presidents tend to use simple words and simple sentences to make sure everyone can understaned their speeches. 
 
 
-<img src="figs/Average Sentence Length.jpeg" alt="alt text" width="50" height="50">
-![image](figs/Average Sentence Length.jpeg=50*50)
+<img src="figs/Average Sentence Length.jpeg" alt="alt text" width="1000" height="800">
 
 
 
