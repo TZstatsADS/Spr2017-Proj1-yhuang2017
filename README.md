@@ -24,14 +24,13 @@ Term: Fall 2016
 + 2. Republicans are more "wordy" than the Democrats. 
 
 
-![image](figs/Speech Length by party.jpeg)
+<img src="figs/Speech Length by party.jpeg" alt="alt text" width="600" height="400">
 
 
 
 + 3. President Woodrow Wilson is the "greatest" president since he used more than 1 "great" among 120 words.
 
-
-![image](figs/Words Frequency (great) .jpeg)
+<img src="figs/Words Frequency (great) .jpeg" alt="alt text" width="600" height="400">
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
