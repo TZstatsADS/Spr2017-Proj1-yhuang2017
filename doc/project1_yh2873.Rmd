@@ -1,21 +1,15 @@
 ---
-title: 'Tutorial (week 2) B: text mining'
+title: 'Project 1: What did the presidents say at their inauguation?'
 output:
-  html_document: default
   html_notebook: default
-toc: yes
-toc_depth: 2
+  html_document: default
 ---
 
 # Step 0: check and install needed packages. Load the libraries and functions. 
 
 ```{r, message=FALSE, warning=FALSE}
 
-packages.used=c("rvest", "tibble", "qdap", 
-                "sentimentr", "gplots", "dplyr",
-                "tm", "syuzhet", "factoextra", 
-                "beeswarm", "scales", "RColorBrewer",
-                "RANN", "tm", "topicmodels")
+packages.used=c("rvest", "xml2", "qdap","syuzhet", "ggplot2", "tm","tidytext","reshape2")
 
 # check packages that need to be installed.
 packages.needed=setdiff(packages.used, 
@@ -34,22 +28,23 @@ library("syuzhet")
 library("ggplot2")
 library("tm")
 library("tidytext")
+library("reshape2")
 
 source("../lib/speechFuncs.R")
 ```
+
 This notebook was prepared with the following environmental settings.
 
 ```{r}
 print(R.version)
 ```
 
-# Step 1: Data harvest: scrap speech URLs from <http://www.presidency.ucsb.edu/>.
+# Step 1: Data harvest: speech information and speech texts 
 
-we will focus on the inauguration speeches.
-find some trends, from 1789 to 2017.
+In this project, I will focus on all the inauguration speeches and try to find some insteresting trends or fun facts in them.
 
-first, load in the data from URL
 
+First of all, load in the data from both the URL provided and the prepared CSV data set.
 
 ```{r, message=FALSE, warning=FALSE}
 main.page <- read_html(x = "http://www.presidency.ucsb.edu/inaugurals.php")
@@ -57,19 +52,11 @@ main.page <- read_html(x = "http://www.presidency.ucsb.edu/inaugurals.php")
 # f.speechlinks is a function for extracting links from the list of speeches. 
 inaug=f.speechlinks(main.page)
 inaug=inaug[-nrow(inaug),] # remove the last line, irrelevant due to error.
-
-```
-
-# Step 2: Using speech metadata posted on <http://www.presidency.ucsb.edu/>, we prepared CSV data sets for the speeches we will scrap. 
-
-```{r}
+#read in the csv data set
 inaug.list=read.csv("../data/inauglist.csv", stringsAsFactors = FALSE)
-#delete the date column due to the formatting error
 ```
 
-We assemble all scrapped speeches into one list. Note here that we don't have the full text yet, only the links to full text transcripts. 
-
-# Step 3: scrap the texts of speeches from the speech URLs.
+Integrate the information and the URLs into one list.
 
 ```{r}
 speech.list=cbind(inaug.list, inaug)
@@ -77,11 +64,7 @@ speech.list=speech.list[,-5]
 #delete the date column due to formatting error
 colnames(speech.list)[colnames(speech.list)=="links"]="Date"
 #name the correct date
-```
 
-now we have words of every speech, so we could compare them.
-
-```{r}
 #abtract the year of the speech
 speech.list$year = rep(NA,nrow(speech.list))
 for ( i in 1:nrow(speech.list))
@@ -89,44 +72,9 @@ for ( i in 1:nrow(speech.list))
         speech.list$year[i] = as.numeric(substring(speech.list$Date[i],n-3,n))
 }
 
-words.partymean=tapply(speech.list$Words,speech.list$Party,mean)
-
-
-ggplot(data = speech.list)+
-  geom_point(mapping = aes(x=year,y=Words,color=Party))+
-  geom_smooth(mapping = aes(x=year,y=Words),method="lm",se=F)
 ```
 
-```{r}
-Demo=speech.list[speech.list$Party=="Democratic",]
-Demo=Demo[!is.na(Demo$President),]
-Repub=speech.list[speech.list$Party=="Republican",]
-Repub=Repub[!is.na(Repub$President),]
-Demo.Repub=rbind(Demo,Repub)
-
-ggplot(data = Demo.Repub,mapping = aes(x=year,y=Words,color=Party))+
-  geom_point()+
-  geom_smooth(se=F)
-
-
-```
-
-
-deal with outliers
-```{r}
-speech.list2=speech.list[-which.max(speech.list$Words),]
-speech.list2=speech.list2[-which.min(speech.list$Words),]
-
-
-words.partymean2=tapply(speech.list2$Words,speech.list2$Party,mean)
-
-ggplot(data = speech.list2)+
-  geom_point(mapping = aes(x=year,y=Words,color=Party))+
-  geom_smooth(mapping = aes(x=year,y=Words),method="lm",se=F)
-```
-
-
-Based on the list of speeches, we scrap the main text part of the transcript's html page.For reproducibility, we also save our scrapped speeches into our local folder as individual speech files. 
+Scrap the fulltext of every speech.
 
 ```{r}
 # Loop over each row in speech.list
@@ -147,11 +95,7 @@ for(i in seq(nrow(speech.list))) {
 ```
 
 
-
-
-# Step 4: data Processing --- generate list of sentences
-
-We will use sentences as units of analysis for this project, as sentences are natural languge units for organizing thoughts and ideas. For each extracted sentence, we apply sentiment analysis using [NRC sentiment lexion](http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm). "The NRC Emotion Lexicon is a list of English words and their associations with eight basic emotions (anger, fear, anticipation, trust, surprise, sadness, joy, and disgust) and two sentiments (negative and positive). The annotations were manually done by crowdsourcing."
+# Step 2: Data processing: generate list of sentences
 
 We assign an sequential id to each sentence in a speech (`sent.id`) and also calculated the number of words in each sentence as *sentence length* (`word.count`).
 
@@ -171,29 +115,132 @@ for(i in 1:nrow(speech.list)){
     )
   }
 }
+
+sentence.list=sentence.list[!is.na(sentence.list$word.count),]
+#delete lines of non-sentences. 
 ```
 
-Some non-sentences exist in raw data due to erroneous extra end-of sentence marks. 
+
+# Step 3: Data analysis: length of speech in amount of words/sentences & length of sentence
+
+##words amount in speech
+
 ```{r}
-sentence.list=sentence.list[!is.na(sentence.list$word.count),]
+
+#plot the speech length vs year
+ggplot(data = speech.list)+
+  geom_point(mapping = aes(x=year,y=Words,color=Party))+
+  geom_smooth(mapping = aes(x=year,y=Words),method="lm",se=F)+
+  labs(list(title = "Speech Length (in words)", x = "Year", y = "words in speech"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 ```
+
+We can tell there is a slight trend that the length of speech is getting shorter.
+
+Also, we found some "outliers" in the picture.
+
+```{r}
+speech.list[which.max(speech.list$Words),c("President","year","Words")]
+speech.list[which.min(speech.list$Words),c("President","year","Words")]
+```
+
+For example, the longest inaugural address was William H. Harrison's in 1841, which amounted to 8,460 words.
+The shortest one was George Washington's in 1793, which was only 135 words.
+
+
+We tried to get rid of them, however, the overall pattern didn't change much. Namely, the length of an inaugurant speech keeps getting shorter gradually:
+
+```{r}
+speech.list.new=speech.list[-which.max(speech.list$Words),]
+speech.list.new=speech.list.new[-which.min(speech.list.new$Words),]
+
+#plot the speech length (without outliers) vs year
+ggplot(data = speech.list.new)+
+  geom_point(mapping = aes(x=year,y=Words,color=Party))+
+  geom_smooth(mapping = aes(x=year,y=Words),method="lm",se=F)+
+  labs(list(title = "Speech Length (in words, no outliers)", x = "Year", y = "words in speech"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+
+```
+
+
+##sentences amount in speech
+
+```{r}
+speech.list$sentence=tapply(sentence.list$sent.id,sentence.list$year,length)
+ggplot(data = speech.list)+
+  geom_point(mapping = aes(x=year,y=sentence,color=Party))+
+  geom_smooth(aes(x=year,y=sentence),se=F,method="lm")+
+  labs(list(title = "Speech Length (in secences)", x = "Year", y = "sentences in speech"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+
+```
+
+From this point of view, the amount of setences in each speech is actually increasing. Then it easliy comes to the conclusion: every sentence contains fewer words now than before.
+
+##average words amount in sentence
 
 ```{r}
 speech.list$word.count=tapply(sentence.list$word.count,sentence.list$year,mean)
 
 ggplot(data = speech.list)+
   geom_point(mapping = aes(x=year,y=word.count,color=Party))+
-  geom_smooth(mapping = aes(x=year,y=word.count),se=F,method="lm")
-
+  geom_smooth(mapping = aes(x=year,y=word.count),se=F,method="lm")+
+  labs(list(title = "Average Sentence Length (in words)", x = "Year", y = "word in sentence"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
 ```
 
+This pattern proved my thought.
+I believe the reason is that centuries or decades ago, the presidents considered their audience as people who are well-educated. However, along with the increasing voter turnout, more and more people are listening to the president speeches, among whom are some who didn't receive good education. Therefore, presidents are tend to use simple words and simple sentences to make the speech easily understood Nowadays.
+
+
+# Step 4: Data analysis: Democratic Party vs Republican Party ?
+
+From the first picture of step 3, I found that speech lengths of presidents from Republican Party are mostly above average, meanwhile, the speech lengths of presidents who are Democrats are generally below the average.
+So I selet the speeches of presidents from two major party, Democratic Party and Republican Party, and try to find how does diffrent party related to the the length of sentence/speech.
+
+```{r,warning=F}
+Demo=speech.list[speech.list$Party=="Democratic",]
+Demo=Demo[!is.na(Demo$President),]
+Repub=speech.list[speech.list$Party=="Republican",]
+Repub=Repub[!is.na(Repub$President),]
+Demo.Repub=rbind(Demo,Repub)
+
+ggplot(data = Demo.Repub,mapping = aes(x=year,y=Words,color=Party))+
+  geom_point()+
+  geom_smooth(se=F,method="loess")+
+  labs(list(title = "Speech Length (in words)", x = "Year", y = "words in speech"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+
+
+
+ggplot(data = Demo.Repub,mapping = aes(x=year,y=sentence,color=Party))+
+  geom_point()+
+  geom_smooth(se=F,method="loess")+
+  labs(list(title = "Speech Length (in sentences)", x = "Year", y = "sentences in speech"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+
+
+ggplot(data = Demo.Repub,mapping = aes(x=year,y=word.count,color=Party))+
+  geom_point()+
+  geom_smooth(se=F,method="loess")+
+  labs(list(title = "Average Sentence Length (in words)", x = "Year", y = "words in sentence"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
+
+
+```
+From figures above, we can tell that Republicans is more "wordy" than the Democrats. Their speeches tend to contain more sentences and thus amount to more words. However, presidents from two parties all followed the trend that each sentence has fewer words today than before.
+
+# Step 4: Data analysis: Word Frequency
+
+##words frequency in all speeches
+There are some words that appear in every speech. So I was wondering which words have high frequency of occurances.
+I loaded in the speeches from local folder and counted the frequency of every word.
 
 ```{r,warnings=F}
-
 folder.path="../data/InauguralSpeeches/"
 fulltext<-Corpus(DirSource(folder.path))
-
 
 fulltext<-tm_map(fulltext, stripWhitespace)
 fulltext<-tm_map(fulltext, content_transformer(tolower))
@@ -206,58 +253,65 @@ fulltext<-tm_map(fulltext, removePunctuation)
 fulltext<-tm_map(fulltext, removeNumbers)
 fulltext<-tm_map(fulltext, PlainTextDocument)
 
-
-
 dtm <- DocumentTermMatrix(fulltext) 
 dtms <- removeSparseTerms(dtm, 0.1)
-
 ```
 
-word frequency
+
+Then plot the frequency of words which showed more than 300 times in all the inauguration speech. There are 41 such words in total.
+
 ```{r}
 freq <- sort(colSums(as.matrix(dtm)), decreasing=TRUE)  
-wf <- data.frame(word=names(freq), freq=freq)  
+wf <- data.frame(word=names(freq), freq=freq) 
+
 ggplot(subset(wf, freq>300), aes(word, freq))+    
 geom_bar(stat="identity")+
-theme(axis.text.x=element_text(angle=45, hjust=1))   
-```
+theme(axis.text.x=element_text(angle=45, hjust=1),plot.title = element_text(size = 20, face = "bold",hjust = 0.5))+
+labs(list(title = "Words Frequency (more than 300 times) ", x = "Year", y = "words amount"))
 
-for some certern word
+nrow(subset(wf, freq>300))
+wf[which.max(wf$freq),]
+```
+The word "will" appeared most in the speeches, with 1864 times.
+
+
+##frequency of certain words in every speech
+
+In this part I try to find the frequency of certain words in every speech, to check if there is any intesting apperance. However, due to the different numbers of words each speech has, I devide the frequency by the length of speech(in words),to show how many times a word could appear in every 100 words in a speech. I take the words "people" & "govern" as an example here.
+
 ```{r}
-#people
+#people vs govern
 for (i in 1:nrow(speech.list))
      {
        speech.list$people[i]=length(gregexpr("people",speech.list$fulltext[i])[[1]])/speech.list$Words[i]*100
-}
-ggplot(data=speech.list,aes(x=year,y=people))+
-  geom_point(color="purple")+
-  geom_smooth(method="lm",se=F)
-
-#govern
-
-for (i in 1:nrow(speech.list))
-     {
        speech.list$govern[i]=length(gregexpr("govern",speech.list$fulltext[i])[[1]])/speech.list$Words[i]*100
 }
-ggplot(data=speech.list,aes(x=year,y=govern))+
-  geom_point(color="orange")+
-  geom_smooth(method="lm",se=F,color="red")
 
+sublist=speech.list[,c("year","people","govern")]
+sub=melt(sublist,id="year")
+ggplot(data=sub)+
+  geom_point(aes(x=year, y=value, colour=variable))+
+  geom_smooth(aes(x=year, y=value, colour=variable),se=F,method="lm")+
+  labs(list(title = "Words Frequncy (every 100 words)", x = "Year", y = "words"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 ```
 
-who is "greatest" president?
+There is a pattern that the word "people" are using more frequently while the word "govern" appears less. This may be a sign that today presidents care more about people rather than the power to govern, and the country is getting democratic.
 
+##Who is the "greatest" president?
+
+President Woodrow Wilson's speech used more than 1 "great" among 120 words.
 ```{r}
-
 for (i in 1:nrow(speech.list))
      {
-       speech.list$great[i]=length(gregexpr("great",speech.list$fulltext[i])[[1]])/speech.list$Words[i]
+       speech.list$great[i]=length(gregexpr("great",speech.list$fulltext[i])[[1]])/speech.list$Words[i]*100
 }
 ggplot(data=speech.list,aes(x=year,y=great))+
-  geom_bar(stat="identity")
+  geom_bar(stat="identity")+
+  labs(list(title = "Words Frequncy (every 100 words)", x = "Year", y = "words"))+
+  theme(plot.title = element_text(size = 20, face = "bold",hjust = 0.5))
 
-speech.list[which.max(speech.list$great),1:7]
+speech.list[which.max(speech.list$great),c("President","Date","great")]
 ```
-
 
 
